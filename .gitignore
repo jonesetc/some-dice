@@ -1,0 +1,12 @@
+# cargo build dirs
+debug/
+target/
+
+# rustfmt temp files
+**/*.rs.bk
+
+# macos finder indexing
+.DS_Store
+
+# Personal notes
+notes.md

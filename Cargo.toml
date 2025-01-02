@@ -1,0 +1,30 @@
+[package]
+name = "some-dice"
+description = "An offline, independent implementation of AnyDice"
+version = "0.1.0"
+authors = ["Kyle Jones <2461104+jonesetc@users.noreply.github.com>"]
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/jonesetc/some-dice"
+homepage = "https://github.com/jonesetc/some-dice"
+keywords = ["AnyDice", "dice", "ttrpg", "probability", "interpreter"]
+categories = ["compilers", "game-development", "mathematics", "parsing", "simulation"]
+edition = "2021"
+rust-version = "1.74"
+
+[lib]
+doctest = false
+
+[dependencies]
+lalrpop-util = { version = "0.22.0", optional = true}
+logos = { version = "0.15.0", optional = true }
+rand = { version = "0.8.5", optional = true }
+
+[build-dependencies]
+lalrpop = { version = "0.22.0", default-features = false, optional = true }
+
+[features]
+default = ["parse", "interpret", "sample"]
+parse = ["dep:lalrpop", "dep:lalrpop-util", "dep:logos"]
+interpret = []
+sample = ["dep:rand"]

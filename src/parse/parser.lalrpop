@@ -1,0 +1,138 @@
+use crate::ast;
+use super::token::Token;
+use super::lexer::LexError;
+
+grammar;
+
+extern {
+    type Location = usize;
+    type Error = LexError;
+
+    enum Token {
+        // Keywords
+        "output" => Token::OutputKeyword,
+        "if" => Token::IfKeyword,
+        "else" => Token::ElseKeyword,
+        "loop" => Token::LoopKeyword,
+        "over" => Token::OverKeyword,
+        "function" => Token::FunctionKeyword,
+        "result" => Token::ResultKeyword,
+        "set" => Token::SetKeyword,
+        "to" => Token::ToKeyword,
+        // Literals
+        "integer" => Token::IntegerLiteral(<i32>),
+        "config" => Token::StringLiteral(<String>),
+        // Identifiers
+        "variable" => Token::VariableName(<String>),
+        // Types
+        "n" => Token::Number,
+        "d" => Token::Dice,
+        "s" => Token::Sequence,
+        // Separator symbols
+        "," => Token::Comma,
+        ".." => Token::Range,
+        ":" => Token::Colon,
+        // Wrapping Symbols
+        "(" => Token::OpenParen,
+        ")" => Token::CloseParen,
+        "[" => Token::OpenBracket,
+        "]" => Token::CloseBracket,
+        "{" => Token::OpenBrace,
+        "}" => Token::CloseBrace,
+        "\"" => Token::DoubleQuote,
+        // Operation Symbols
+        "!" => Token::Bang,
+        "#" => Token::Hash,
+        "^" => Token::Caret,
+        "*" => Token::Asterisk,
+        "/" => Token::ForwardSlash,
+        "+" => Token::Plus,
+        "-" => Token::Minus,
+        "&" => Token::Ampersand,
+        "|" => Token::Pipe,
+        "=" => Token::Equal,
+        "!=" => Token::BangEqual,
+        "<" => Token::Less,
+        ">" => Token::Greater,
+        "<=" => Token::LessEqual,
+        ">=" => Token::GreaterEqual,
+        "@" => Token::Access,
+    }
+}
+
+pub(in crate::parse) Program: ast::Program = {
+    <Statement*> => ast::functional::program(<>),
+}
+
+
+pub(in crate::parse) Statement: ast::Statement = {
+    "output" <Expression> => ast::functional::output(<>, None),
+    "set" <ConfigString> "to" <ConfigString> => ast::functional::configure_string(<>),
+    "set" <ConfigString> "to" <Expression> => ast::functional::configure_expression(<>),
+}
+
+ConfigString: String = {
+    <"config">,
+}
+
+pub(in crate::parse) Expression: ast::Expression = {
+    #[precedence(level="0")]
+    Paren,
+    <"integer"> => ast::functional::integer(<>),
+    <"variable"> => ast::functional::variable_reference(<>),
+    // 0 or 1 entries
+    "{" <entry:SequenceEntry?> "}" => match entry {
+        Some(e) => ast::functional::sequence(vec![e]),
+        None => ast::functional::sequence(vec![]),
+    },
+    // 2 or more entries
+    "{" <mut entries:(<SequenceEntry> ",")+> <entry:SequenceEntry> "}" => {
+        entries.push(entry);
+        ast::functional::sequence(entries)
+    },
+
+    #[precedence(level="1")] #[assoc(side="left")]
+    "-" <Expression> => ast::functional::negate(Box::new(<>)),
+    "!" <Expression> => ast::functional::not(Box::new(<>)),
+    "#" <Expression> => ast::functional::length(Box::new(<>)),
+
+    #[precedence(level="2")] #[assoc(side="left")]
+    <l:Expression> "d" <r:Expression> => ast::functional::dice(Box::new(l), Box::new(r)),
+
+    #[precedence(level="3")] #[assoc(side="left")]
+    <l:Expression> "@" <r:Expression> => ast::functional::access(Box::new(l), Box::new(r)),
+
+    #[precedence(level="4")] #[assoc(side="left")]
+    <l:Expression> "^" <r:Expression> => ast::functional::exponent(Box::new(l), Box::new(r)),
+
+    #[precedence(level="5")] #[assoc(side="left")]
+    <l:Expression> "*" <r:Expression> => ast::functional::multiply(Box::new(l), Box::new(r)),
+    <l:Expression> "/" <r:Expression> => ast::functional::divide(Box::new(l), Box::new(r)),
+
+    #[precedence(level="6")] #[assoc(side="left")]
+    <l:Expression> "+" <r:Expression> => ast::functional::add(Box::new(l), Box::new(r)),
+    <l:Expression> "-" <r:Expression> => ast::functional::subtract(Box::new(l), Box::new(r)),
+
+    #[precedence(level="7")] #[assoc(side="left")]
+    <l:Expression> "=" <r:Expression> => ast::functional::equal(Box::new(l), Box::new(r)),
+    <l:Expression> "!=" <r:Expression> => ast::functional::not_equal(Box::new(l), Box::new(r)),
+    <l:Expression> "<" <r:Expression> => ast::functional::less(Box::new(l), Box::new(r)),
+    <l:Expression> ">" <r:Expression> => ast::functional::greater(Box::new(l), Box::new(r)),
+    <l:Expression> "<=" <r:Expression> => ast::functional::less_or_equal(Box::new(l), Box::new(r)),
+    <l:Expression> ">=" <r:Expression> => ast::functional::greater_or_equal(Box::new(l), Box::new(r)),
+
+    #[precedence(level="8")] #[assoc(side="left")]
+    <l:Expression> "&" <r:Expression> => ast::functional::and(Box::new(l), Box::new(r)),
+    <l:Expression> "|" <r:Expression> => ast::functional::or(Box::new(l), Box::new(r)),
+}
+
+SequenceEntry: ast::SequenceEntry = {
+    <Expression> => ast::functional::single_entry(<>, ast::functional::integer(1)),
+    <Expression> ":" <Expression> => ast::functional::single_entry(<>),
+    <Expression> ".." <Expression> => ast::functional::range_entry(<>, ast::functional::integer(1)),
+    <Expression>  ".." <Expression> ":" <Expression> => ast::functional::range_entry(<>),
+}
+
+Paren: ast::Expression = {
+    "(" <Expression> ")",
+}
