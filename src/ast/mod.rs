@@ -6,7 +6,7 @@
 pub mod functional;
 
 /// Operators which have only one operand
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum UnaryOperator {
     /// Negation: `(-1) = -1`, `(--2) = 2`, `(-0) = 0`
     Negate,
@@ -17,7 +17,7 @@ pub enum UnaryOperator {
 }
 
 /// Operators with a left and right operand
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum BinaryOperator {
     /// Exponentiation: `(2 ^ 3) = 8`
     Exponent,
@@ -103,13 +103,15 @@ pub enum SequenceEntry {
 /// An expression evaluates always to a single value
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expression {
-    /// Integer capped to i32 as the AnyDice reference server appears to use double-precisions floats.
+    /// An Integer literal
+    ///
+    /// Capped to i32 as the AnyDice reference server appears to use double-precisions floats.
     /// This means that a loss of precision for integers is possible starting at (positive or negative) `2^53`.
     /// Unfortunately i32 is much below that limit and i64 is much above, but this keeps things simple and will work for almost all common usage.
     Integer { value: i32 },
     /// Name of variable to look up and substiture value of at runtime
     VariableReference { name: String },
-    /// An ordered sequence of possible values.
+    /// An ordered sequence of possible values
     Sequence { entries: Vec<SequenceEntry> },
     /// Operations with only one operand
     UnaryOperation {
@@ -122,6 +124,28 @@ pub enum Expression {
         left: Box<Expression>,
         right: Box<Expression>,
     },
+    /// Calls to a user-defined or built-in function
+    ///
+    /// Name should be normalized by replacing positional arguments with `?`.
+    FunctionCall {
+        name: String,
+        arguments: Vec<Expression>,
+    },
+}
+
+/// An expected type for a function parameter
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum FunctionParameterExpectedType {
+    Dice,
+    Number,
+    Sequence,
+}
+
+/// A named parameter for a function definition with an optional expected type
+#[derive(Clone, Debug, PartialEq)]
+pub struct FunctionParameter {
+    name: String,
+    expected_type: Option<FunctionParameterExpectedType>,
 }
 
 /// A statement alters the state of the interpreter, but does not produce a value
@@ -136,6 +160,13 @@ pub enum Statement {
     ConfigureString { setting: String, value: String },
     /// Configure the interpreter behavior with an expression value
     ConfigureExpression { setting: String, value: Expression },
+    /// Define a new or redefine an existing function
+    ///
+    /// Name should be normalized by replacing positional parameters with `?`.
+    FunctionDefinition {
+        name: String,
+        parameters: Vec<FunctionParameter>,
+    },
 }
 
 /// The root node of the AST, representing a full program to run

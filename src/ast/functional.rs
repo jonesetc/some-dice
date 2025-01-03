@@ -116,6 +116,13 @@ pub fn sequence(entries: Vec<ast::SequenceEntry>) -> ast::Expression {
     ast::Expression::Sequence { entries }
 }
 
+/// Create [function call expression]
+///
+/// [function call expression]: ast::Expression::FunctionCall
+pub fn function_call(name: String, arguments: Vec<ast::Expression>) -> ast::Expression {
+    ast::Expression::FunctionCall { name, arguments }
+}
+
 /// Create [output statement]
 ///
 /// [output statement]: ast::Statement::Output
@@ -135,6 +142,29 @@ pub fn configure_string(setting: String, value: String) -> ast::Statement {
 /// [configure statement]: ast::Statement::ConfigureExpression
 pub fn configure_expression(setting: String, value: ast::Expression) -> ast::Statement {
     ast::Statement::ConfigureExpression { setting, value }
+}
+
+/// Create [function parameter]
+///
+/// [function parameter]: ast::FunctionParameter
+pub fn function_parameter(
+    name: String,
+    expected_type: Option<ast::FunctionParameterExpectedType>,
+) -> ast::FunctionParameter {
+    ast::FunctionParameter {
+        name,
+        expected_type,
+    }
+}
+
+/// Create [function definition statement]
+///
+/// [function definition statement]: ast::Statement::FunctionDefinition
+pub fn function_definition(
+    name: String,
+    parameters: Vec<ast::FunctionParameter>,
+) -> ast::Statement {
+    ast::Statement::FunctionDefinition { name, parameters }
 }
 
 /// Create [program]
