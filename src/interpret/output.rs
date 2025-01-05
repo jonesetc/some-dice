@@ -21,6 +21,12 @@ impl Outputs {
     }
 }
 
+impl Outputs {
+    pub fn outcomes(&self) -> &Vec<Output> {
+        &self.outputs
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Output {
     outcomes: Vec<Outcome>,
@@ -28,25 +34,11 @@ pub struct Output {
 }
 
 impl Output {
-    pub fn new(outcomes: Vec<Outcome>) -> Self {
-        Self {
-            outcomes,
-            name: None,
-        }
-    }
-
-    pub fn named(outcomes: Vec<Outcome>, name: String) -> Self {
-        Self {
-            outcomes,
-            name: Some(name),
-        }
+    pub fn new(outcomes: Vec<Outcome>, name: Option<String>) -> Self {
+        Self { outcomes, name }
     }
 
     pub fn outcomes(&self) -> &Vec<Outcome> {
         &self.outcomes
-    }
-
-    pub fn into_outcomes(self) -> Vec<Outcome> {
-        self.outcomes
     }
 }

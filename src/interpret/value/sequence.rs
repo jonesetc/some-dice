@@ -1,4 +1,4 @@
 #[derive(Clone, Debug, PartialEq)]
 pub(in crate::interpret) struct Sequence {
-    values: Vec<i32>,
+    pub(in crate::interpret) values: Vec<i32>,
 }

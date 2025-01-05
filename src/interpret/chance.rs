@@ -4,76 +4,47 @@ use super::factor;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub(super) struct Chance {
-    numerator: usize,
-    denominator: usize,
+    pub(super) numerator: usize,
+    pub(super) denominator: usize,
 }
 
 impl ops::Mul<Self> for Chance {
     type Output = Self;
 
-    fn mul(mut self, rhs: Self) -> Self::Output {
-        self *= rhs;
-        self
-    }
-}
-
-impl ops::MulAssign<Self> for Chance {
-    fn mul_assign(&mut self, rhs: Self) {
-        self.numerator *= rhs.numerator;
-        self.denominator *= rhs.denominator;
-        self.simplify();
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self::new(
+            self.numerator * rhs.numerator,
+            self.denominator * rhs.denominator,
+        )
     }
 }
 
 impl ops::Add<Self> for Chance {
     type Output = Self;
 
-    fn add(mut self, rhs: Self) -> Self::Output {
-        self += rhs;
-        self
-    }
-}
-
-impl ops::AddAssign<Self> for Chance {
-    fn add_assign(&mut self, rhs: Self) {
-        self.numerator *= rhs.denominator;
-        self.numerator += self.denominator * rhs.numerator;
-        self.denominator *= rhs.denominator;
-        self.simplify();
+    fn add(self, rhs: Self) -> Self::Output {
+        Self::new(
+            self.numerator * rhs.denominator + self.denominator * rhs.numerator,
+            self.denominator * rhs.denominator,
+        )
     }
 }
 
 impl ops::Mul<usize> for Chance {
     type Output = Self;
 
-    fn mul(mut self, rhs: usize) -> Self::Output {
-        self *= rhs;
-        self
-    }
-}
-
-impl ops::MulAssign<usize> for Chance {
-    fn mul_assign(&mut self, rhs: usize) {
-        self.numerator *= rhs;
-        self.simplify();
+    fn mul(self, rhs: usize) -> Self::Output {
+        Self::new(self.numerator * rhs, self.denominator)
     }
 }
 
 impl ops::Div<usize> for Chance {
     type Output = Self;
 
-    fn div(mut self, rhs: usize) -> Self::Output {
-        self /= rhs;
-        self
-    }
-}
-
-impl ops::DivAssign<usize> for Chance {
     // Rational devision is implemented by multiplying the denominator
-    #[allow(clippy::suspicious_op_assign_impl)]
-    fn div_assign(&mut self, rhs: usize) {
-        self.denominator *= rhs;
-        self.simplify();
+    #[allow(clippy::suspicious_arithmetic_impl)]
+    fn div(self, rhs: usize) -> Self::Output {
+        Self::new(self.numerator, self.denominator * rhs)
     }
 }
 
